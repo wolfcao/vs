@@ -1,0 +1,350 @@
+/* src/index.css */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 主题CSS变量定义 - 简洁现代风格 */
+:root {
+  /* 主色调 - 清新自然 */
+  --color-primary: #4ECDC4;
+  --color-primaryHover: #26A69A;
+  --color-secondary: #F0F0F0;
+  --color-background: #FFFFFF;
+  --color-surface: #FFFFFF;
+  --color-text: #333333;
+  --color-textSecondary: #666666;
+  --color-border: #E0E0E0;
+  --color-success: #66BB6A;
+  --color-warning: #FFA726;
+  --color-error: #EF5350;
+  --color-info: #42A5F5;
+}
+
+/* 全局基础样式 */
+body {
+  font-family: 'Microsoft YaHei', 'PingFang SC', 'Heiti SC', sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-text);
+  line-height: 1.6;
+}
+
+/* 简洁卡片样式 */
+.ghibli-card {
+  background: var(--color-surface);
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--color-border);
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.ghibli-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+  border-color: var(--color-primary);
+}
+
+/* 简洁按钮样式 */
+.ghibli-btn {
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-weight: 500;
+  font-size: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.ghibli-btn:hover {
+  background: var(--color-primaryHover);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+}
+
+.ghibli-btn:active {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  transform: translateY(1px);
+}
+
+/* 按钮变体 */
+.ghibli-btn-success {
+  background: var(--color-success);
+}
+
+.ghibli-btn-success:hover {
+  background: #4CAF50;
+}
+
+.ghibli-btn-warning {
+  background: var(--color-warning);
+  color: white;
+}
+
+.ghibli-btn-warning:hover {
+  background: #FF9800;
+}
+
+.ghibli-btn-error {
+  background: var(--color-error);
+}
+
+.ghibli-btn-error:hover {
+  background: #F44336;
+}
+
+/* 简洁边框样式 */
+.ghibli-border {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+/* 简洁标题样式 */
+.ghibli-title {
+  font-family: 'Microsoft YaHei', 'PingFang SC', 'Heiti SC', sans-serif;
+  font-weight: 600;
+  color: var(--color-text);
+  letter-spacing: 0.3px;
+}
+
+/* 简洁输入框样式 */
+.ghibli-input {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.ghibli-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(78, 205, 196, 0.1);
+}
+
+/* 简洁标签样式 */
+.ghibli-tag {
+  background: rgba(78, 205, 196, 0.1);
+  color: var(--color-primary);
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid rgba(78, 205, 196, 0.2);
+  transition: all 0.2s ease;
+}
+
+.ghibli-tag:hover {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+/* 简洁分隔线 */
+.ghibli-divider {
+  height: 1px;
+  background: var(--color-border);
+  border: none;
+  margin: 1.5rem 0;
+}
+
+/* 简洁背景 */
+.ghibli-background {
+  background: var(--color-background);
+}
+
+/* 简洁卡片组 */
+.ghibli-card-group {
+  display: grid;
+  gap: 16px;
+}
+
+/* 简洁导航样式 */
+.ghibli-nav {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.ghibli-nav-item {
+  color: var(--color-textSecondary);
+  padding: 12px 16px;
+  transition: all 0.2s ease;
+  border-bottom: 2px solid transparent;
+}
+
+.ghibli-nav-item:hover {
+  color: var(--color-primary);
+}
+
+.ghibli-nav-item.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+/* 简洁按钮组 */
+.ghibli-btn-group {
+  display: flex;
+  gap: 8px;
+}
+
+/* 简洁表单样式 */
+.ghibli-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ghibli-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ghibli-form-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+/* 简洁列表样式 */
+.ghibli-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.ghibli-list-item {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.ghibli-list-item:last-child {
+  border-bottom: none;
+}
+
+/* 简洁表格样式 */
+.ghibli-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ghibli-table th {
+  text-align: left;
+  padding: 12px;
+  background: var(--color-secondary);
+  font-weight: 600;
+  border-bottom: 2px solid var(--color-border);
+}
+
+.ghibli-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.ghibli-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* 简洁卡片头部 */
+.ghibli-card-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* 简洁卡片内容 */
+.ghibli-card-content {
+  padding: 16px;
+}
+
+/* 简洁卡片底部 */
+.ghibli-card-footer {
+  padding: 16px;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-secondary);
+  border-radius: 0 0 8px 8px;
+}
+
+/* 简洁阴影效果 */
+.ghibli-shadow-sm {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.ghibli-shadow {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.ghibli-shadow-lg {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* 简洁圆角 */
+.ghibli-radius-sm {
+  border-radius: 4px;
+}
+
+.ghibli-radius {
+  border-radius: 8px;
+}
+
+.ghibli-radius-lg {
+  border-radius: 12px;
+}
+
+/* 过渡效果 */
+.ghibli-transition {
+  transition: all 0.2s ease;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .ghibli-card {
+    margin: 0;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+  
+  .ghibli-btn {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+  }
+  
+  .ghibli-form {
+    gap: 12px;
+  }
+}
+
+/* 深色模式支持 */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background: #121212;
+    --color-surface: #1E1E1E;
+    --color-text: #FFFFFF;
+    --color-textSecondary: #B0B0B0;
+    --color-border: #333333;
+    --color-secondary: #2A2A2A;
+  }
+  
+  .ghibli-card {
+    background: var(--color-surface);
+    border-color: var(--color-border);
+  }
+  
+  .ghibli-input {
+    background: var(--color-surface);
+    color: var(--color-text);
+    border-color: var(--color-border);
+  }
+  
+  .ghibli-divider {
+    background: var(--color-border);
+  }
+  
+  .ghibli-table th {
+    background: var(--color-secondary);
+  }
+}
