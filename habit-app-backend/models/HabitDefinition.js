@@ -1,6 +1,8 @@
 const { DataTypes } = require("sequelize");
 const { sequelize } = require("../config/sequelize");
 const SubTask = require("./SubTask");
+const User = require("./User");
+const Category = require("./Category");
 
 const HabitDefinition = sequelize.define(
   "HabitDefinition",
@@ -20,7 +22,7 @@ const HabitDefinition = sequelize.define(
     },
     category: {
       type: DataTypes.ENUM("health", "learning", "creativity", "productivity"),
-      allowNull: false,
+      allowNull: true, // Set to nullable for backward compatibility
     },
     required_team_size: {
       type: DataTypes.INTEGER,
@@ -62,6 +64,28 @@ HabitDefinition.hasMany(SubTask, {
 SubTask.belongsTo(HabitDefinition, {
   foreignKey: "habit_definition_id",
   as: "habit_definition",
+});
+
+// Define relationship with User (author)
+HabitDefinition.belongsTo(User, {
+  foreignKey: "author_id",
+  as: "author",
+});
+
+// Define many-to-many relationship with Category
+// This creates a habit_definition_categories join table
+HabitDefinition.belongsToMany(Category, {
+  through: 'habit_definition_categories',
+  as: 'categories',
+  foreignKey: 'habit_definition_id',
+  otherKey: 'category_id'
+});
+
+Category.belongsToMany(HabitDefinition, {
+  through: 'habit_definition_categories',
+  as: 'habit_definitions',
+  foreignKey: 'category_id',
+  otherKey: 'habit_definition_id'
 });
 
 module.exports = HabitDefinition;

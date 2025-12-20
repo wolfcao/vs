@@ -20,32 +20,29 @@ exports.getCurrentUser = async (req, res) => {
 
     if (isDatabaseConnected()) {
       // Use MySQL if connected
-      user = await User.findOne();
+      // Get the current user by ID from JWT token
+      user = await User.findByPk(req.user.id);
 
       if (!user) {
-        // Create a sample user if no users exist
-        user = await User.create({
-          name: "Sample User",
-          avatar:
-            "https://thirdqq.qlogo.cn/ek_qqapp/AQVJKMtqeFCGNEZqicOj7qb7mnpcJiaZNlEOf0iasx2DicuEycbIG9cQktWUBxWR1dFWfLMI2Ilt/100",
-        });
+        return res.status(404).json({ message: "User not found" });
       }
     } else {
       // Use memory storage as fallback
       console.log("Using memory storage for user operations");
-      user = await userStorage.findOne();
+      // Get the current user by ID from JWT token
+      user = await userStorage.findOne({ id: req.user.id });
 
       if (!user) {
-        // Create a sample user if no users exist
-        user = await userStorage.create({
-          name: "Sample User",
-          avatar: "https://i.pravatar.cc/150?img=1",
-        });
+        return res.status(404).json({ message: "User not found" });
       }
     }
 
     // Convert Sequelize model to plain object if needed
     const userResponse = user.toJSON ? user.toJSON() : user;
+    // Remove password from response if exists
+    if (userResponse.password) {
+      delete userResponse.password;
+    }
 
     res.status(200).json(userResponse);
   } catch (error) {
@@ -160,7 +157,7 @@ exports.register = async (req, res) => {
         username,
         email,
         password: hashedPassword,
-        avatar: avatar || "https://i.pravatar.cc/150?img=1",
+        avatar: avatar || "https://gips0.baidu.com/it/u=2806647686,1039877281&fm=3074&app=3074&f=PNG?w=2048&h=2048",
         is_active: true,
         deleted_at: null,
       });
@@ -175,7 +172,7 @@ exports.register = async (req, res) => {
         username,
         email,
         password: hashedPassword,
-        avatar: avatar || "https://i.pravatar.cc/150?img=1",
+        avatar: avatar || "https://gips0.baidu.com/it/u=2806647686,1039877281&fm=3074&app=3074&f=PNG?w=2048&h=2048",
         is_active: true,
         deleted_at: null,
         created_at: new Date(),

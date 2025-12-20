@@ -31,7 +31,7 @@ interface HabitContextType {
   myActiveHabits: ActiveHabit[];
   isLoading: boolean;
   addHabitToMarketplace: (
-    habit: Omit<HabitDefinition, "id" | "authorId" | "createdAt">
+    habit: Omit<HabitDefinition, "id" | "authorId" | "createdAt" | "authorName">
   ) => Promise<HabitDefinition>;
   joinHabit: (habitId: string) => Promise<ActiveHabit | undefined>;
   toggleTimer: (activeHabitId: string, subTaskId: string) => Promise<any>;
@@ -156,7 +156,7 @@ export const HabitProvider: React.FC<{ children: ReactNode }> = ({
   }, []);
 
   const addHabitToMarketplace = async (
-    data: Omit<HabitDefinition, "id" | "authorId" | "createdAt">
+    data: Omit<HabitDefinition, "id" | "authorId" | "createdAt" | "authorName">
   ) => {
     try {
       const newHabit = await habitDefinitionApi.create(data);

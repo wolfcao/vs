@@ -45,28 +45,47 @@ const Marketplace: React.FC<MarketplaceProps> = ({
   // Check habit status for current user
   const getHabitStatus = (habitId: string) => {
     const activeHabit = myActiveHabits.find(
-      habit => habit.habitSnapshot?.id === habitId || habit.habitDefinitionId === habitId
+      (habit) =>
+        habit.habitSnapshot?.id === habitId ||
+        habit.habitDefinitionId === habitId
     );
-    if (!activeHabit) return 'available';
+    if (!activeHabit) return "available";
+
+    // Check if current user is actually in the members list
+    const currentUserMember = activeHabit.members?.find(
+      (member) => member.userId === user?.id
+    );
+    if (!currentUserMember) return "available";
+
+    // Check approval status
+    if (currentUserMember.approvalStatus === 1) {
+      return activeHabit.status;
+    } else if (currentUserMember.approvalStatus === 0) {
+      return "pending";
+    } else if (currentUserMember.approvalStatus === -1) {
+      return "rejected";
+    }
+
     return activeHabit.status;
   };
-  
+
   // Check if user created this habit
   const isUserCreator = (habit: any) => {
     return habit.authorId === user?.id;
   };
-  
+
   const handleJoin = async (id: string) => {
     try {
       const result = await joinHabit(id);
-      if (result?.status === 'pending') {
+      if (result?.id) {
         alert("申请已提交！请等待创建人的同意。");
-        navigate("/dashboard");
+        navigate(`/detail/${result.id}`);
       } else {
-        navigate("/dashboard");
+        alert("加入习惯失败，请稍后重试。");
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "加入习惯失败";
+      const errorMessage =
+        error instanceof Error ? error.message : "加入习惯失败";
       alert(`加入习惯失败：${errorMessage}`);
     }
   };
@@ -109,76 +128,115 @@ const Marketplace: React.FC<MarketplaceProps> = ({
         {filteredHabits.map((habit) => {
           const status = getHabitStatus(habit.id);
           const isCreator = isUserCreator(habit);
-          
+
           // Determine card style based on status
-          let cardClass = "ghibli-card min-w-[320px] max-w-sm transition-all duration-300 hover:translate-y-[-4px] rounded-xl overflow-hidden";
+          let cardClass =
+            "ghibli-card min-w-[320px] max-w-sm transition-all duration-300 hover:translate-y-[-4px] rounded-xl overflow-hidden";
           if (isCreator) {
-            cardClass += " bg-primary/5 border-2 border-primary shadow-md hover:shadow-2xl";
-          } else if (status === 'active') {
-            cardClass += " bg-success/5 border-2 border-success shadow-md hover:shadow-2xl";
-          } else if (status === 'pending') {
-            cardClass += " bg-warning/5 border-2 border-warning shadow-md hover:shadow-2xl";
+            cardClass +=
+              " bg-primary/5 border-2 border-primary shadow-md hover:shadow-2xl";
+          } else if (status === "active") {
+            cardClass +=
+              " bg-success/5 border-2 border-success shadow-md hover:shadow-2xl";
+          } else if (status === "pending") {
+            cardClass +=
+              " bg-warning/5 border-2 border-warning shadow-md hover:shadow-2xl";
           } else {
-            cardClass += " bg-surface border border-border shadow-md hover:shadow-xl";
+            cardClass +=
+              " bg-surface border border-border shadow-md hover:shadow-xl";
           }
-          
+
           return (
-            <div
-              key={habit.id}
-              className={cardClass}
-            >
-              <div className="p-6 md:p-7">
-                {/* Status Badge */}
-                {isCreator && (
-                  <div className="bg-primary text-white text-xs font-bold px-4 py-1 uppercase tracking-wider rounded-full inline-block mb-4">
-                    我创建的
-                  </div>
-                )}
-                {!isCreator && status === 'active' && (
-                  <div className="bg-success text-white text-xs font-bold px-4 py-1 uppercase tracking-wider rounded-full inline-block mb-4">
-                    已加入
-                  </div>
-                )}
-                {!isCreator && status === 'pending' && (
-                  <div className="bg-warning text-white text-xs font-bold px-4 py-1 uppercase tracking-wider rounded-full inline-block mb-4">
-                    申请中
-                  </div>
-                )}
-                
+            <div key={habit.id} className={cardClass}>
+              <div className="p-6 md:p-7 relative">
+                {/* Status Badge and Author Info */}
+                <div
+                  className={`flex items-center mb-4 ${
+                    isCreator || status === "active" || status === "pending"
+                      ? "justify-between"
+                      : "justify-start"
+                  }`}
+                >
+                  {/* Check if there are any status badges */}
+                  {isCreator || status === "active" || status === "pending" ? (
+                    <>
+                      <div className="flex items-center space-x-2">
+                        {isCreator && (
+                          <div className="bg-primary text-white text-xs font-bold px-4 py-1 uppercase tracking-wider rounded-full inline-block">
+                            我创建的
+                          </div>
+                        )}
+                        {!isCreator && status === "active" && (
+                          <div className="bg-success text-white text-xs font-bold px-4 py-1 uppercase tracking-wider rounded-full inline-block">
+                            已加入
+                          </div>
+                        )}
+                        {!isCreator && status === "pending" && (
+                          <div className="bg-warning text-white text-xs font-bold px-4 py-1 uppercase tracking-wider rounded-full inline-block">
+                            申请中
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Author Info - Right aligned when there are status badges */}
+                      <div className="flex items-center text-text text-sm font-medium space-x-1">
+                        <Users className="w-4 h-4 text-primary" />
+                        <span>{habit.authorName}</span>
+                      </div>
+                    </>
+                  ) : (
+                    /* Author Info - Left aligned when no status badges */
+                    <div className="flex items-center text-text text-sm font-medium space-x-1">
+                      <Users className="w-4 h-4 text-primary" />
+                      <span>{habit.authorName}</span>
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex justify-between items-start mb-4">
-                  <span
-                    className={`px-3 py-1 rounded-full text-sm font-semibold uppercase tracking-wide ghibli-btn shadow-md hover:shadow-lg transition-all duration-300 ${habit.category === "health" ? "bg-success/20 text-success border border-success/30" : habit.category === "productivity" ? "bg-primary/20 text-primary border border-primary/30" : habit.category === "learning" ? "bg-warning/20 text-warning border border-warning/30" : "bg-info/20 text-info border border-info/30"}`}
-                  >
-                    {getCategoryChinese(habit.category)}
-                  </span>
-                  <div className="flex items-center text-textSecondary text-sm font-medium bg-secondary/30 px-3 py-1 rounded-full ghibli-btn shadow-md hover:shadow-lg transition-all duration-300">
-                    <Clock className="w-4 h-4 mr-1 text-primary" />
-                    每日 {habit.dailyStartTime}
+                  <div className="flex flex-wrap gap-2">
+                    {habit.categories?.map((category) => (
+                      <span
+                        key={category}
+                        className="ghibli-tag text-sm bg-primary text-white"
+                      >
+                        {category}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex items-center">
+                    <div className="flex items-center text-textSecondary text-sm font-medium px-3 py-1 rounded-full border border-border">
+                      <Clock className="w-4 h-4 mr-1 text-primary" />
+                      每日 {habit.dailyStartTime}
+                    </div>
                   </div>
                 </div>
 
-                <h3 className="text-2xl font-bold text-text mb-3 flex items-center">
-                  <span className="mr-2 text-yellow-500">✨</span>
+                <h3 className="text-xl font-bold text-text mb-3">
                   {habit.title}
                 </h3>
                 <p className="text-textSecondary text-base mb-6 leading-relaxed">
                   {habit.description}
                 </p>
 
-                <div className="space-y-4 mb-6">
-                  <div className="flex items-center text-base text-text bg-primary/10 px-4 py-2 rounded-lg ghibli-btn shadow-md hover:shadow-lg transition-all duration-300">
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-center text-base text-text px-4 py-2 rounded-lg border border-border">
                     <Users className="w-5 h-5 mr-3 text-primary" />
-                    <span className="font-medium">需要{habit.requiredTeamSize}人团队</span>
+                    <span className="font-medium">
+                      需要{habit.requiredTeamSize}人团队
+                    </span>
                   </div>
-                  <div className="flex items-center text-base text-text bg-success/10 px-4 py-2 rounded-lg ghibli-btn shadow-md hover:shadow-lg transition-all duration-300">
-                    <Calendar className="w-5 h-5 mr-3 text-success" />
-                    <span className="font-medium">{habit.durationDays}天挑战</span>
+                  <div className="flex items-center text-base text-text px-4 py-2 rounded-lg border border-border">
+                    <Calendar className="w-5 h-5 mr-3 text-primary" />
+                    <span className="font-medium">
+                      {habit.durationDays}天挑战
+                    </span>
                   </div>
                 </div>
 
-                <div className="flex flex-col justify-start gap-3 mb-6 bg-warning/10 p-4 rounded-xl h-[130px] overflow-hidden ghibli-border shadow-sm">
-                  <p className="text-sm font-bold text-warning uppercase flex items-center">
-                    <span className="mr-2">🎯</span>
+                <div className="flex flex-col justify-start gap-3 mb-6 p-4 rounded-lg border border-border h-[130px] overflow-hidden">
+                  <p className="text-sm font-bold text-text flex items-center">
+                    <span className="mr-2">📋</span>
                     每日任务
                   </p>
                   <div className="flex flex-col justify-start gap-2 min-h-0">
@@ -209,7 +267,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({
                     onClick={() => {
                       // Find the active habit and navigate to detail
                       const activeHabit = myActiveHabits.find(
-                        h => h.habitSnapshot?.id === habit.id
+                        (h) => h.habitSnapshot?.id === habit.id
                       );
                       if (activeHabit) {
                         navigate(`/detail/${activeHabit.id}`);
@@ -221,12 +279,12 @@ const Marketplace: React.FC<MarketplaceProps> = ({
                   >
                     👑 查看我的小队
                   </button>
-                ) : status === 'active' ? (
+                ) : status === "active" ? (
                   <button
                     onClick={() => {
                       // Find the active habit and navigate to detail
                       const activeHabit = myActiveHabits.find(
-                        h => h.habitSnapshot?.id === habit.id
+                        (h) => h.habitSnapshot?.id === habit.id
                       );
                       if (activeHabit) {
                         navigate(`/detail/${activeHabit.id}`);
@@ -236,9 +294,17 @@ const Marketplace: React.FC<MarketplaceProps> = ({
                   >
                     ✅ 已加入，查看详情
                   </button>
-                ) : status === 'pending' ? (
+                ) : status === "pending" ? (
                   <button
-                    onClick={() => navigate("/dashboard")}
+                    onClick={() => {
+                      // Find the active habit and navigate to detail
+                      const activeHabit = myActiveHabits.find(
+                        (h) => h.habitSnapshot?.id === habit.id
+                      );
+                      if (activeHabit) {
+                        navigate(`/detail/${activeHabit.id}`);
+                      }
+                    }}
                     className="w-full py-4 bg-warning hover:bg-warning/90 text-white text-lg font-bold rounded-full transition-all ghibli-btn hover:shadow-2xl hover:translate-y-[-2px] active:scale-95"
                   >
                     ⏳ 申请中，查看状态

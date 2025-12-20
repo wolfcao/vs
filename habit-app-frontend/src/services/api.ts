@@ -64,10 +64,13 @@ export const updateCurrentUser = (userData: { name: string; avatar: string }) =>
 // 习惯定义相关API
 export const habitDefinitionApi = {
   // 获取所有习惯定义（市场）
-  getAll: () => request<HabitDefinition[]>('/habits'),
+  getAll: async () => {
+    const response = await request<{ habits: HabitDefinition[], currentUserId: string | null }>('/habits');
+    return response.habits;
+  },
 
   // 创建新习惯定义
-  create: (habitData: Omit<HabitDefinition, 'id' | 'authorId' | 'createdAt'>) =>
+  create: (habitData: Omit<HabitDefinition, 'id' | 'authorId' | 'createdAt' | 'authorName'>) =>
     request<HabitDefinition>('/habits', {
       method: 'POST',
       body: JSON.stringify(habitData),

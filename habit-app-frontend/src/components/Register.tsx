@@ -192,7 +192,7 @@ const Register: React.FC = () => {
               value={credentials.avatar}
               onChange={handleInputChange}
               className="w-full px-5 py-3 border-3 border-primary/30 rounded-xl focus:ring-3 focus:ring-primary focus:border-primary transition-all ghibli-btn hover:shadow-md"
-              placeholder="https://i.pravatar.cc/150?img=1"
+              placeholder="https://gips0.baidu.com/it/u=2806647686,1039877281&fm=3074&app=3074&f=PNG?w=2048&h=2048"
               disabled={isLoading || authLoading}
             />
           </div>

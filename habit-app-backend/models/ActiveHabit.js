@@ -3,6 +3,7 @@ const { sequelize } = require("../config/sequelize");
 const TeamMember = require("./TeamMember");
 const TimeModificationRequest = require("./TimeModificationRequest");
 const HabitDefinition = require("./HabitDefinition");
+const Category = require("./Category");
 
 const ActiveHabit = sequelize.define(
   "ActiveHabit",

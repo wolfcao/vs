@@ -27,12 +27,22 @@ const formatTime = (seconds: number) => {
 const HabitDetail: React.FC = () => {
   const { habitId } = useParams<{ habitId: string }>();
   const navigate = useNavigate();
-  const { myActiveHabits, toggleTimer, completeTask, requestTimeChange, approveJoinRequest, rejectJoinRequest, refreshContext } = useHabit();
+  const {
+    myActiveHabits,
+    toggleTimer,
+    completeTask,
+    requestTimeChange,
+    approveJoinRequest,
+    rejectJoinRequest,
+    refreshContext,
+  } = useHabit();
   const { user: authUser } = useAuth();
   const [isEditTimeModalOpen, setIsEditTimeModalOpen] = useState(false);
   const [newTime, setNewTime] = useState("");
   const [isProcessingChange, setIsProcessingChange] = useState(false);
-  const [activeHabit, setActiveHabit] = useState<ActiveHabit | undefined>(undefined);
+  const [activeHabit, setActiveHabit] = useState<ActiveHabit | undefined>(
+    undefined
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -84,12 +94,12 @@ const HabitDetail: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8 text-center">
           <div className="flex justify-center">
             <RefreshCw className="h-16 w-16 text-primary animate-spin" />
           </div>
-          <h2 className="mt-6 text-2xl font-extrabold text-gray-900">
+          <h2 className="mt-6 text-2xl font-extrabold text-text ghibli-title">
             加载习惯详情中...
           </h2>
         </div>
@@ -99,15 +109,15 @@ const HabitDetail: React.FC = () => {
 
   if (error || !activeHabit) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8 text-center">
           <div className="flex justify-center">
-            <AlertCircle className="h-16 w-16 text-red-500" />
+            <AlertCircle className="h-16 w-16 text-error" />
           </div>
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
+          <h2 className="mt-6 text-3xl font-extrabold text-text ghibli-title">
             {error || "习惯未找到"}
           </h2>
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-sm text-textSecondary">
             {error || "抱歉，您访问的习惯不存在或已被删除。"}
           </p>
           <button
@@ -115,7 +125,7 @@ const HabitDetail: React.FC = () => {
               refreshContext();
               navigate("/dashboard");
             }}
-            className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 mt-4"
+            className="ghibli-btn w-full mt-4"
           >
             返回仪表盘
           </button>
@@ -140,29 +150,73 @@ const HabitDetail: React.FC = () => {
   // Check if current user is the creator of the habit
   const isCreator = authUser?.id === activeHabit.habitSnapshot?.authorId;
 
-  // Mock pending requests (in real app, this would come from the backend)
-  const pendingRequests = [
-    { id: '1', userId: 'user3', name: '张三', avatar: 'https://i.pravatar.cc/150?img=3', requestTime: '2025-12-19 14:30' },
-    { id: '2', userId: 'user4', name: '李四', avatar: 'https://i.pravatar.cc/150?img=4', requestTime: '2025-12-19 15:45' }
-  ];
+  // Filter pending requests from members (approvalStatus === 0)
+  const pendingRequests =
+    activeHabit.members
+      ?.filter((member) => member.approvalStatus === 0)
+      .map((member, idx) => ({
+        id: idx.toString(),
+        userId: member.userId,
+        name: member.name,
+        avatar: member.avatar,
+        requestTime: new Date().toLocaleString("zh-CN"),
+      })) || [];
+
+  // Check if current user is rejected from this habit
+  const currentUserMember = activeHabit.members?.find(
+    (member) => member.userId === authUser?.id
+  );
+  const isRejected = currentUserMember?.approvalStatus === -1;
+
+  // Get habit creator name
+  const creatorMember = activeHabit.members?.find(
+    (member) => member.userId === activeHabit.habitSnapshot?.authorId
+  );
+  const creatorName = creatorMember?.name || "未知用户";
 
   return (
     <div className="space-y-6 pb-20">
       {/* Header */}
       <div className="flex items-center space-x-2 mb-2">
-        <button onClick={() => navigate("/dashboard")} className="text-textSecondary hover:text-text">
+        <button
+          onClick={() => navigate("/dashboard")}
+          className="text-textSecondary hover:text-text transition-colors"
+        >
           返回
         </button>
         <span className="text-border">/</span>
         <span className="text-textSecondary">小队房间</span>
       </div>
 
-      <div className="bg-surface rounded-2xl p-6 border border-border shadow-sm relative overflow-hidden">
+      {/* Status Notices */}
+      {isRejected && (
+        <div className="p-4 bg-error/10 border border-error/300 rounded-lg">
+          <div className="flex items-center space-x-2">
+            <AlertCircle className="w-4 h-4 text-error" />
+            <span className="text-error text-sm font-medium">
+              您已被{creatorName}拒绝加入该习惯
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Pending Notice */}
+      {currentUserMember?.approvalStatus === 0 && (
+        <div className="p-4 bg-warning/10 border border-warning/300 rounded-lg">
+          <div className="flex items-center space-x-2">
+            <Clock className="w-4 h-4 text-warning" />
+            <span className="text-warning text-sm font-medium">
+              您的加入申请正在等待{creatorName}的审批
+            </span>
+          </div>
+        </div>
+      )}
+
+      <div className="p-6 relative overflow-hidden bg-surface shadow-sm rounded-lg">
         <div className="absolute top-0 right-0 p-4 opacity-10">
           <ShieldCheck className="w-32 h-32 text-primary" />
         </div>
-
-        <h1 className="text-2xl font-bold text-text relative z-10">
+        <h1 className="text-2xl font-bold text-text relative z-10 ghibli-title">
           {activeHabit.habitSnapshot?.title || "未命名习惯"}
         </h1>
         <p className="text-textSecondary text-sm mt-1 relative z-10 max-w-lg">
@@ -170,7 +224,7 @@ const HabitDetail: React.FC = () => {
         </p>
 
         <div className="mt-6 flex flex-wrap gap-4 relative z-10">
-          <div className="flex items-center bg-primary/10 text-primary px-3 py-1.5 rounded-lg text-sm font-medium">
+          <div className="flex items-center bg-primary/10 text-primary px-3 py-1.5 rounded-lg text-sm font-medium ghibli-tag">
             <Clock className="w-4 h-4 mr-2" />
             开始时间: {activeHabit.habitSnapshot?.dailyStartTime || "00:00"}
             {activeHabit.hasModifiedTimeToday !== true && (
@@ -181,13 +235,13 @@ const HabitDetail: React.FC = () => {
                   );
                   setIsEditTimeModalOpen(true);
                 }}
-                className="ml-2 p-1 hover:bg-primary/20 rounded"
+                className="ml-2 p-1 hover:bg-primary/20 rounded transition-colors"
               >
                 <Edit2 className="w-3 h-3" />
               </button>
             )}
           </div>
-          <div className="flex items-center bg-secondary text-text px-3 py-1.5 rounded-lg text-sm font-medium">
+          <div className="flex items-center bg-secondary text-text px-3 py-1.5 rounded-lg text-sm font-medium ghibli-tag">
             <Users className="w-4 h-4 mr-2" />
             {activeHabit.members?.length || 0} 成员
           </div>
@@ -199,15 +253,17 @@ const HabitDetail: React.FC = () => {
         {/* Left: My Tasks */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-text">今日任务</h2>
+            <h2 className="text-lg font-bold text-text ghibli-title">
+              今日任务
+            </h2>
             {isAllTasksDone && (
-              <span className="bg-success/2 text-success-500 text-xs px-2 py-1 rounded font-bold uppercase tracking-wider">
+              <span className="ghibli-tag bg-success/2 text-success px-3 py-1">
                 任务完成
               </span>
             )}
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-4">
             {activeHabit.habitSnapshot?.dailyTasks?.map((task) => {
               const log = activeHabit.myLogs?.[task.id] || {
                 elapsedSeconds: 0,
@@ -221,17 +277,15 @@ const HabitDetail: React.FC = () => {
               return (
                 <div
                   key={task.id}
-                  className={`bg-surface border rounded-xl p-4 transition-all ${
-                    isDone
-                      ? "border-success/3 bg-success/50"
-                      : "border-border200"
+                  className={`p-4 transition-all bg-surface shadow-sm rounded-lg ${
+                    isDone ? "border border-success/50" : ""
                   }`}
                 >
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <h3
                         className={`font-semibold ${
-                          isDone ? "text-success-600" : "text-gray-800"
+                          isDone ? "text-success" : "text-text"
                         }`}
                       >
                         {task.name}
@@ -240,7 +294,7 @@ const HabitDetail: React.FC = () => {
                         最低要求: {task.minDurationMinutes} 分钟
                       </div>
                     </div>
-                    <div className="text-2xl font-mono font-medium text-gray-700">
+                    <div className="text-2xl font-mono font-medium text-text">
                       {formatTime(log.elapsedSeconds)}
                     </div>
                   </div>
@@ -250,15 +304,16 @@ const HabitDetail: React.FC = () => {
                     <div className="flex items-center space-x-3">
                       <button
                         onClick={() => toggleTimer(activeHabit.id, task.id)}
-                        className={`flex-1 flex items-center justify-center py-2 rounded-lg font-medium transition-colors ${
+                        className={`ghibli-btn flex-1 flex items-center justify-center py-2 rounded-lg font-medium transition-colors ${
                           log.isRunning
-                            ? "bg-warning/2 text-warning hover:bg-warning/30"
-                            : "bg-primary-600 text-white hover:bg-primaryHover"
+                            ? "bg-warning text-text"
+                            : "bg-primary text-white"
                         }`}
                       >
                         {log.isRunning ? (
                           <>
-                            <Pause className="w-4 h-4 mr-2" /> 暂停计时
+                            <Pause className="w-4 h-4 mr-2" />
+                            暂停计时
                           </>
                         ) : (
                           <>
@@ -270,11 +325,11 @@ const HabitDetail: React.FC = () => {
 
                       <button
                         onClick={() => completeTask(activeHabit.id, task.id)}
-                        disabled={!minTimeReached || log.isRunning} // Must pause to finish? Or can finish while running? Let's say needs pause or running is fine but min time req.
-                        className={`px-4 py-2 rounded-lg font-medium border flex items-center ${
+                        disabled={!minTimeReached || log.isRunning}
+                        className={`ghibli-btn px-4 py-2 rounded-lg font-medium transition-colors ${
                           minTimeReached
-                            ? "border-success-600 text-success-600 hover:bg-success/15 cursor-pointer"
-                            : "border-border200 text-textSecondary cursor-not-allowed"
+                            ? "bg-success text-white hover:bg-success/90"
+                            : "bg-border text-textSecondary cursor-not-allowed"
                         }`}
                       >
                         <CheckCircle className="w-5 h-5" />
@@ -283,8 +338,9 @@ const HabitDetail: React.FC = () => {
                   )}
 
                   {isDone && (
-                    <div className="w-full py-2 bg-success/2 text-success-500 rounded-lg flex items-center justify-center font-medium">
-                      <CheckCircle className="w-5 h-5 mr-2" /> 已完成
+                    <div className="w-full py-2 bg-success text-white rounded-lg flex items-center justify-center font-medium">
+                      <CheckCircle className="w-5 h-5 mr-2" />
+                      已完成
                     </div>
                   )}
                 </div>
@@ -295,45 +351,63 @@ const HabitDetail: React.FC = () => {
 
         {/* Right: Team Status */}
         <div className="space-y-4">
-          <h2 className="text-lg font-bold text-gray-900">小队进度</h2>
-          <div className="bg-surface rounded-xl border border-border200 p-4 space-y-6">
-            {activeHabit.members?.map((member, idx) => (
-              <div key={idx} className="flex items-center space-x-3">
-                <div className="relative">
-                  <img
-                    src={member.avatar}
-                    className="w-10 h-10 rounded-full bg-secondary object-cover"
-                    alt={member.name}
-                  />
-                  {member.status === "completed" && (
-                    <div className="absolute -bottom-1 -right-1 bg-success rounded-full p-0.5 border-2 border-surface">
-                      <CheckCircle className="w-3 h-3 text-white" />
+          <h2 className="text-lg font-bold text-text ghibli-title">小队进度</h2>
+          <div className="p-4 space-y-6 bg-surface shadow-sm rounded-lg">
+            {activeHabit.members
+              ?.filter((member) => member.approvalStatus === 1)
+              .map((member, idx) => {
+                const isOwner =
+                  member.userId === activeHabit.habitSnapshot?.authorId;
+                return (
+                  <div key={idx} className="flex items-center space-x-3">
+                    <div className="relative">
+                      <img
+                        src={member.avatar}
+                        className="w-10 h-10 rounded-full bg-secondary object-cover border-2 border-surface"
+                        alt={member.name}
+                      />
+                      {member.status === "completed" && (
+                        <div className="absolute -bottom-1 -right-1 bg-success rounded-full p-0.5 border-2 border-surface">
+                          <CheckCircle className="w-3 h-3 text-white" />
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-                <div className="flex-1">
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="font-medium text-text">
-                      {member.name}
-                    </span>
-                    <span className="text-textSecondary text-xs">
-                      {member.progress}%
-                    </span>
+                    <div className="flex-1">
+                      <div className="flex justify-between text-sm mb-1">
+                        <div className="flex items-center space-x-2">
+                          <span className="font-medium text-text">
+                            {member.name}
+                          </span>
+                          <span
+                            className={`text-xs px-1.5 py-0.5 rounded-full ${
+                              isOwner
+                                ? "bg-primary/20 text-primary"
+                                : "bg-secondary text-textSecondary"
+                            }`}
+                          >
+                            {isOwner ? "群主" : "成员"}
+                          </span>
+                        </div>
+                        <span className="text-textSecondary text-xs">
+                          {member.progress}%
+                        </span>
+                      </div>
+                      <div className="w-full bg-secondary rounded-full h-1.5">
+                        <div
+                          className="bg-primary h-1.5 rounded-full transition-all duration-1000"
+                          style={{ width: `${member.progress}%` }}
+                        ></div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="w-full bg-secondary rounded-full h-1.5">
-                    <div
-                      className="bg-primary h-1.5 rounded-full transition-all duration-1000"
-                      style={{ width: `${member.progress}%` }}
-                    ></div>
-                  </div>
-                </div>
-              </div>
-            ))}
+                );
+              })}
           </div>
 
-          <div className="ghibli-card bg-info/10 border border-info/300 p-4 rounded-xl">
+          <div className="p-4 bg-info/10 border border-info/300 rounded-lg">
             <h4 className="text-info font-semibold text-sm mb-2 flex items-center">
-              <Users className="w-4 h-4 mr-2" /> 小队激励
+              <Users className="w-4 h-4 mr-2" />
+              小队激励
             </h4>
             <p className="text-info/80 text-xs leading-relaxed">
               "坚持不是追求完美，而是拒绝放弃。" <br /> 继续加油，团队！
@@ -342,11 +416,16 @@ const HabitDetail: React.FC = () => {
 
           {/* Pending Join Requests (Only for creator) */}
           {isCreator && pendingRequests.length > 0 && (
-            <div className="bg-surface rounded-xl border border-border200 p-4 space-y-4">
-              <h2 className="text-lg font-bold text-text">待处理的加入请求</h2>
+            <div className="p-4 space-y-4 bg-surface shadow-sm rounded-lg">
+              <h2 className="text-lg font-bold text-text ghibli-title">
+                待处理的加入请求
+              </h2>
               <div className="space-y-3">
                 {pendingRequests.map((request) => (
-                  <div key={request.id} className="flex items-center justify-between bg-secondary/50 p-3 rounded-lg">
+                  <div
+                    key={request.id}
+                    className="flex items-center justify-between bg-secondary/50 p-3 rounded-lg shadow-sm"
+                  >
                     <div className="flex items-center space-x-3">
                       <img
                         src={request.avatar}
@@ -366,26 +445,62 @@ const HabitDetail: React.FC = () => {
                       <button
                         onClick={async () => {
                           try {
-                            await approveJoinRequest(activeHabit.id, request.userId);
+                            await approveJoinRequest(
+                              activeHabit.id,
+                              request.userId
+                            );
                             alert(`已同意 ${request.name} 的加入请求`);
+                            // 手动刷新页面数据
+                            setIsLoading(true);
+                            const updatedHabit = await activeHabitApi.getById(
+                              activeHabit.id
+                            );
+                            setActiveHabit(updatedHabit);
+                            setIsLoading(false);
+                            // 同时刷新上下文数据
+                            await refreshContext();
                           } catch (error) {
-                            alert(`同意请求失败：${error instanceof Error ? error.message : '未知错误'}`);
+                            alert(
+                              `同意请求失败：${
+                                error instanceof Error
+                                  ? error.message
+                                  : "未知错误"
+                              }`
+                            );
                           }
                         }}
-                        className="px-3 py-1 bg-success/20 text-success text-xs font-medium rounded-lg hover:bg-success/30 transition-colors"
+                        className="ghibli-btn-success px-3 py-1 text-xs"
                       >
                         同意
                       </button>
                       <button
                         onClick={async () => {
                           try {
-                            await rejectJoinRequest(activeHabit.id, request.userId);
+                            await rejectJoinRequest(
+                              activeHabit.id,
+                              request.userId
+                            );
                             alert(`已拒绝 ${request.name} 的加入请求`);
+                            // 手动刷新页面数据
+                            setIsLoading(true);
+                            const updatedHabit = await activeHabitApi.getById(
+                              activeHabit.id
+                            );
+                            setActiveHabit(updatedHabit);
+                            setIsLoading(false);
+                            // 同时刷新上下文数据
+                            await refreshContext();
                           } catch (error) {
-                            alert(`拒绝请求失败：${error instanceof Error ? error.message : '未知错误'}`);
+                            alert(
+                              `拒绝请求失败：${
+                                error instanceof Error
+                                  ? error.message
+                                  : "未知错误"
+                              }`
+                            );
                           }
                         }}
-                        className="px-3 py-1 bg-red-100 text-red-800 text-xs font-medium rounded-lg hover:bg-red-200 transition-colors"
+                        className="ghibli-btn-error px-3 py-1 text-xs"
                       >
                         拒绝
                       </button>
@@ -401,37 +516,35 @@ const HabitDetail: React.FC = () => {
       {/* Modification Modal */}
       {isEditTimeModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="ghibli-card bg-surface rounded-xl shadow-2xl max-w-md w-full p-6">
-            <h3 className="text-lg font-bold text-text mb-2">
+          <div className="ghibli-card shadow-2xl max-w-md w-full p-6">
+            <h3 className="text-lg font-bold text-text mb-2 ghibli-title">
               请求调整时间
             </h3>
-            <p className="text-textS-condaryt-sm mb-4">
+            <p className="text-textSecondary text-sm mb-4">
               您每天可以调整一次开始时间。需要所有团队成员批准。
             </p>
 
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-slxte-700 mb-1">
-                新的开始时间
-              </label>
+            <div className="ghibli-form-group mb-6">
+              <label className="ghibli-form-label">新的开始时间</label>
               <input
                 type="time"
                 value={newTime}
                 onChange={(e) => setNewTime(e.target.value)}
-                className="w-full border border-border300 rounded-lg p-2.5 focus:ring-2 focus:ripr-marygo-500 outline-none"
+                className="ghibli-input"
               />
             </div>
 
-            <div className="flex space-x-3">
+            <div className="flex space-x-3 ghibli-btn-group">
               <button
                 onClick={() => setIsEditTimeModalOpen(false)}
-                className="flex-1 py-2.5 border border-border300 textxtlate-700 font-medium rounded-lg hoecondarylate-50"
+                className="ghibli-btn w-full bg-secondary text-text"
               >
                 取消
               </button>
               <button
                 onClick={handleTimeChangeRequest}
                 disabled={isProcessingChange}
-                className="flex-1 py-2.5 bg-prdmary600 text-white font-medium rounded-lg hover:pr-maryHover0 flex items-center justify-center disabled:opacity-70"
+                className="ghibli-btn w-full bg-primary text-white flex items-center justify-center disabled:opacity-70"
               >
                 {isProcessingChange ? "请求中..." : "提交请求"}
               </button>

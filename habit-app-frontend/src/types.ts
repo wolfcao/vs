@@ -10,12 +10,13 @@ export interface HabitDefinition {
   id: string;
   title: string;
   description: string;
-  category: "health" | "learning" | "creativity" | "productivity";
+  categories: string[]; // Changed from single category to categories array
   requiredTeamSize: TeamSize;
   durationDays: number;
   dailyStartTime: string; // HH:MM format (24h)
   dailyTasks: SubTask[];
   authorId: string;
+  authorName: string; // Added authorName field
   createdAt: number;
 }
 
@@ -33,6 +34,7 @@ export interface TeamMember {
   avatar: string;
   progress: number; // 0-100% for today
   status: "idle" | "active" | "completed";
+  approvalStatus: number; // 0: 审批中, 1: 通过, -1: 拒绝
 }
 
 export interface ActiveHabit {

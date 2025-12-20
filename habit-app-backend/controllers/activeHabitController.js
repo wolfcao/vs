@@ -22,9 +22,9 @@ const isDatabaseConnected = () => {
 const formatActiveHabitResponse = (activeHabit) => {
   // Handle null or undefined activeHabit
   if (!activeHabit) {
-    throw new Error('Active habit not found or not created');
+    throw new Error("Active habit not found or not created");
   }
-  
+
   // Convert Sequelize model to plain object if needed
   const habitObj = activeHabit.toJSON ? activeHabit.toJSON() : activeHabit;
 
@@ -35,17 +35,17 @@ const formatActiveHabitResponse = (activeHabit) => {
   }
   if (habitObj.habit_snapshot !== undefined) {
     let habitSnapshot = habitObj.habit_snapshot;
-    
+
     // If habitSnapshot is a string, parse it to an object
-    if (typeof habitSnapshot === 'string') {
+    if (typeof habitSnapshot === "string") {
       try {
         habitSnapshot = JSON.parse(habitSnapshot);
       } catch (error) {
-        console.error('Error parsing habitSnapshot:', error);
+        console.error("Error parsing habitSnapshot:", error);
         habitSnapshot = {};
       }
     }
-    
+
     habitObj.habitSnapshot = habitSnapshot;
     delete habitObj.habit_snapshot;
 
@@ -56,7 +56,7 @@ const formatActiveHabitResponse = (activeHabit) => {
       if (!snapshot.title) {
         snapshot.title = "未命名习惯";
       }
-      
+
       if (snapshot.required_team_size !== undefined) {
         snapshot.requiredTeamSize = snapshot.required_team_size;
         delete snapshot.required_team_size;
@@ -124,6 +124,7 @@ const formatActiveHabitResponse = (activeHabit) => {
       avatar: member.avatar,
       progress: member.progress || 0,
       status: member.status,
+      approvalStatus: member.approval_status || member.approvalStatus || 0,
     }));
     delete habitObj.team_members;
   } else if (habitObj.members) {
@@ -134,20 +135,21 @@ const formatActiveHabitResponse = (activeHabit) => {
       avatar: member.avatar,
       progress: member.progress || 0,
       status: member.status,
+      approvalStatus: member.approval_status || member.approvalStatus || 0,
     }));
   }
-  
+
   // Ensure myLogs exists and has proper structure
   if (!habitObj.myLogs) {
     habitObj.myLogs = {};
   }
-  
+
   // Convert string myLogs to object if needed
-  if (typeof habitObj.myLogs === 'string') {
+  if (typeof habitObj.myLogs === "string") {
     try {
       habitObj.myLogs = JSON.parse(habitObj.myLogs);
     } catch (error) {
-      console.error('Error parsing myLogs:', error);
+      console.error("Error parsing myLogs:", error);
       habitObj.myLogs = {};
     }
   }
@@ -274,8 +276,8 @@ exports.joinHabit = async (req, res) => {
         return res.status(404).json({ message: "Habit not found" });
       }
 
-      // Get the current user (for now, just get the first user)
-      const user = await User.findOne();
+      // Get the current user from JWT token
+      const user = await User.findByPk(req.user.id);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -284,10 +286,14 @@ exports.joinHabit = async (req, res) => {
       const userInActiveHabit = await TeamMember.findOne({
         include: {
           model: ActiveHabit,
-          where: { habit_definition_id: habitId },
           as: "active_habit",
         },
-        where: { user_id: user.id },
+        where: {
+          user_id: user.id,
+          "$active_habit.habit_definition_id$": habitId,
+        },
+        raw: true,
+        nest: true,
       });
 
       if (userInActiveHabit) {
@@ -327,6 +333,7 @@ exports.joinHabit = async (req, res) => {
               progress: 0,
               status: "idle",
               active_habit_id: activeHabit.id,
+              approvalStatus: 0, // 0: 审批中
             },
             { transaction }
           );
@@ -389,6 +396,7 @@ exports.joinHabit = async (req, res) => {
               progress: 0,
               status: "idle",
               active_habit_id: newActiveHabit.id,
+              approvalStatus: 1, // 1: 已通过（创建者自动通过）
             },
             { transaction }
           );
@@ -831,6 +839,62 @@ exports.getById = async (req, res) => {
     res.status(200).json(formattedActiveHabit);
   } catch (error) {
     console.error("Error getting active habit by ID:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
+// Approve a join request
+exports.approveJoinRequest = async (req, res) => {
+  try {
+    if (!isDatabaseConnected()) {
+      return res
+        .status(503)
+        .json({ message: "Database unavailable. Please try again later." });
+    }
+
+    const { activeHabitId, userId } = req.params;
+
+    // Update the team member's approval status to approved
+    const updatedMember = await TeamMember.update(
+      { approvalStatus: 1, status: "active" },
+      { where: { user_id: userId, active_habit_id: activeHabitId } }
+    );
+
+    if (updatedMember[0] === 0) {
+      return res.status(404).json({ message: "Team member not found" });
+    }
+
+    res.status(200).json({ message: "Join request approved", success: true });
+  } catch (error) {
+    console.error("Error approving join request:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
+// Reject a join request
+exports.rejectJoinRequest = async (req, res) => {
+  try {
+    if (!isDatabaseConnected()) {
+      return res
+        .status(503)
+        .json({ message: "Database unavailable. Please try again later." });
+    }
+
+    const { activeHabitId, userId } = req.params;
+
+    // Update the team member's approval status to rejected
+    const updatedMember = await TeamMember.update(
+      { approvalStatus: -1 },
+      { where: { user_id: userId, active_habit_id: activeHabitId } }
+    );
+
+    if (updatedMember[0] === 0) {
+      return res.status(404).json({ message: "Team member not found" });
+    }
+
+    res.status(200).json({ message: "Join request rejected", success: true });
+  } catch (error) {
+    console.error("Error rejecting join request:", error);
     res.status(500).json({ message: "Server Error" });
   }
 };

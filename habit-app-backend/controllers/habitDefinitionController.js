@@ -1,5 +1,9 @@
 const HabitDefinition = require("../models/HabitDefinition");
 const SubTask = require("../models/SubTask");
+const ActiveHabit = require("../models/ActiveHabit");
+const TeamMember = require("../models/TeamMember");
+const User = require("../models/User");
+const Category = require("../models/Category");
 const { sequelize } = require("../config/sequelize");
 const { habitDefinitionStorage } = require("../config/memoryStorage");
 
@@ -42,6 +46,15 @@ const formatHabitResponse = (habit) => {
     delete habitObj.updated_at;
   }
 
+  // Add author name to the response
+  if (habitObj.author && habitObj.author.name) {
+    habitObj.authorName = habitObj.author.name;
+    delete habitObj.author;
+  } else if (!habitObj.authorName) {
+    // For all habits without author name, set a default
+    habitObj.authorName = '习惯达人';
+  }
+
   // Format dailyTasks
   if (habitObj.daily_tasks) {
     habitObj.dailyTasks = habitObj.daily_tasks.map((task) => ({
@@ -50,6 +63,15 @@ const formatHabitResponse = (habit) => {
       minDurationMinutes: task.min_duration_minutes,
     }));
     delete habitObj.daily_tasks;
+  }
+
+  // Format categories
+  if (habitObj.categories) {
+    habitObj.categories = habitObj.categories.map((category) => category.name);
+  } else if (habitObj.category) {
+    // For backward compatibility with existing habits that have single category
+    habitObj.categories = [habitObj.category];
+    delete habitObj.category;
   }
 
   return habitObj;
@@ -63,11 +85,23 @@ exports.getAll = async (req, res) => {
     if (isDatabaseConnected()) {
       // Use MySQL if connected
       habits = await HabitDefinition.findAll({
-        include: {
-          model: SubTask,
-          as: "daily_tasks",
-        },
-        order: [['created_at', 'DESC']] // Sort by creation time, newest first
+        include: [
+          {
+            model: SubTask,
+            as: "daily_tasks",
+          },
+          {
+            model: User,
+            as: "author",
+            attributes: ['name'], // Only get the author's name
+          },
+          {
+            model: Category,
+            as: "categories",
+            attributes: ['name'], // Only get the category name
+          }
+        ],
+        order: [["created_at", "DESC"]], // Sort by creation time, newest first
       });
     } else {
       // Use memory storage as fallback
@@ -122,7 +156,13 @@ exports.getAll = async (req, res) => {
     // Format all habits for response
     const formattedHabits = habits.map(formatHabitResponse);
 
-    res.status(200).json(formattedHabits);
+    // Add current user ID to response so frontend can determine which habits are created by the current user
+    const responseData = {
+      habits: formattedHabits,
+      currentUserId: req.user?.id || null,
+    };
+
+    res.status(200).json(responseData);
   } catch (error) {
     console.error("Error getting all habits:", error);
     res.status(500).json({ message: "Server Error" });
@@ -135,15 +175,15 @@ exports.create = async (req, res) => {
     const {
       title,
       description,
-      category,
+      categories,
       requiredTeamSize,
       durationDays,
       dailyStartTime,
       dailyTasks,
     } = req.body;
 
-    // For now, we'll use a sample authorId (1 corresponds to the sample user)
-    const authorId = 1;
+    // Use the current logged-in user's ID as the authorId
+    const authorId = req.user.id;
 
     let newHabit;
 
@@ -151,14 +191,14 @@ exports.create = async (req, res) => {
       // Use MySQL if connected
       // Start a transaction
       const transaction = await sequelize.transaction();
+      let habitId;
 
       try {
-        // Create habit definition
-        newHabit = await HabitDefinition.create(
+        // Create habit definition without categories first
+        const habit = await HabitDefinition.create(
           {
             title,
             description,
-            category,
             required_team_size: requiredTeamSize,
             duration_days: durationDays,
             daily_start_time: dailyStartTime,
@@ -166,6 +206,7 @@ exports.create = async (req, res) => {
           },
           { transaction }
         );
+        habitId = habit.id;
 
         // Create associated sub tasks
         if (dailyTasks && dailyTasks.length > 0) {
@@ -173,53 +214,96 @@ exports.create = async (req, res) => {
             dailyTasks.map((task) => ({
               name: task.name,
               min_duration_minutes: task.minDurationMinutes,
-              habit_definition_id: newHabit.id,
+              habit_definition_id: habitId,
             })),
             { transaction }
           );
         }
 
-        // Commit transaction
+        // Process categories - find or create each category
+        const categoryObjects = [];
+        for (const categoryName of categories) {
+          // Find or create category
+          const [category, created] = await Category.findOrCreate({
+            where: { name: categoryName },
+            defaults: { usageCount: 1 },
+            transaction
+          });
+          
+          // Increment usage count if it already existed
+          if (!created) {
+            await category.increment('usageCount', { by: 1, transaction });
+          }
+          
+          categoryObjects.push(category);
+        }
+        
+        // Associate categories with habit
+        await habit.setCategories(categoryObjects, { transaction });
+
+        // Automatically create active habit for the author
+        const user = await User.findByPk(authorId, { transaction });
+        if (user) {
+          // Get the habit with categories for the snapshot
+          const habitWithCategories = await HabitDefinition.findByPk(habitId, {
+            include: [
+              { model: Category, as: 'categories', attributes: ['name'] }
+            ],
+            transaction
+          });
+          
+          // Create active habit for the author
+          const activeHabit = await ActiveHabit.create(
+            {
+              habit_definition_id: habitId,
+              habit_snapshot: habitWithCategories.toJSON(),
+              start_date: new Date(),
+              my_logs: {},
+              current_day: 1,
+              has_modified_time_today: false,
+              user_id: authorId,
+              status: "active", // Creator is automatically in active status
+            },
+            { transaction }
+          );
+
+          // Create team member entry for the author
+          await TeamMember.create(
+            {
+              active_habit_id: activeHabit.id,
+              user_id: authorId,
+              name: user.name,
+              avatar: user.avatar,
+              progress: 0,
+              status: "active",
+              approval_status: 1, // Creator is automatically approved
+            },
+            { transaction }
+          );
+        }
+
+        // Commit transaction first
         await transaction.commit();
 
-        // Fetch the habit with its sub tasks
-        newHabit = await HabitDefinition.findByPk(newHabit.id, {
-          include: {
-            model: SubTask,
-            as: "daily_tasks",
-          },
+        // Fetch the habit with its sub tasks and categories after transaction is committed
+        newHabit = await HabitDefinition.findByPk(habitId, {
+          include: [
+            {
+              model: SubTask,
+              as: "daily_tasks",
+            },
+            {
+              model: Category,
+              as: "categories",
+              attributes: ['name'],
+            }
+          ],
         });
-        
-        // Automatically create active habit for the author
-        const user = await User.findByPk(authorId);
-        if (user) {
-          // Create active habit for the author
-          await ActiveHabit.create({
-            habit_definition_id: newHabit.id,
-            habit_snapshot: newHabit.toJSON(),
-            start_date: new Date(),
-            my_logs: {},
-            current_day: 1,
-            has_modified_time_today: false,
-            user_id: authorId,
-            status: "active", // Creator is automatically in active status
-          }, { transaction });
-          
-          // Create team member entry for the author
-          await TeamMember.create({
-            active_habit_id: (await ActiveHabit.findOne({
-              where: { habit_definition_id: newHabit.id, user_id: authorId }
-            })).id,
-            user_id: authorId,
-            name: user.name,
-            avatar: user.avatar,
-            progress: 0,
-            status: "active",
-          }, { transaction });
-        }
       } catch (error) {
-        // Rollback transaction if any error occurs
-        await transaction.rollback();
+        // Rollback transaction if it's still active
+        if (transaction.finished !== "commit") {
+          await transaction.rollback();
+        }
         throw error;
       }
     } else {
@@ -228,7 +312,7 @@ exports.create = async (req, res) => {
       newHabit = await habitDefinitionStorage.create({
         title,
         description,
-        category,
+        categories,
         requiredTeamSize,
         durationDays,
         dailyStartTime,
@@ -239,9 +323,13 @@ exports.create = async (req, res) => {
     }
 
     // Format the response
-    const formattedHabit = formatHabitResponse(newHabit);
-
-    res.status(201).json(formattedHabit);
+    try {
+      const formattedHabit = formatHabitResponse(newHabit);
+      res.status(201).json(formattedHabit);
+    } catch (formatError) {
+      console.error("Error formatting habit response:", formatError);
+      res.status(500).json({ message: "Server Error" });
+    }
   } catch (error) {
     console.error("Error creating habit:", error);
     res.status(500).json({ message: "Server Error" });
@@ -257,10 +345,22 @@ exports.getById = async (req, res) => {
     if (isDatabaseConnected()) {
       // Use MySQL if connected
       habit = await HabitDefinition.findByPk(id, {
-        include: {
-          model: SubTask,
-          as: "daily_tasks",
-        },
+        include: [
+          {
+            model: SubTask,
+            as: "daily_tasks",
+          },
+          {
+            model: User,
+            as: "author",
+            attributes: ['name'], // Only get the author's name
+          },
+          {
+            model: Category,
+            as: "categories",
+            attributes: ['name'], // Only get the category name
+          }
+        ],
       });
     } else {
       // Use memory storage as fallback
@@ -278,6 +378,45 @@ exports.getById = async (req, res) => {
     res.status(200).json(formattedHabit);
   } catch (error) {
     console.error("Error getting habit by ID:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
+// Get all categories
+exports.getAllCategories = async (req, res) => {
+  try {
+    let categories;
+
+    if (isDatabaseConnected()) {
+      // Use MySQL if connected
+      categories = await Category.findAll({
+        attributes: ['name', 'usageCount'],
+        order: [['usageCount', 'DESC'], ['name', 'ASC']],
+      });
+    } else {
+      // Use memory storage as fallback (mock categories)
+      categories = [
+        { name: "健康与健身", usageCount: 10 },
+        { name: "学习", usageCount: 8 },
+        { name: "生产力", usageCount: 7 },
+        { name: "创造力", usageCount: 6 },
+        { name: "阅读", usageCount: 5 },
+        { name: "写作", usageCount: 4 },
+        { name: "编程", usageCount: 3 },
+        { name: "冥想", usageCount: 3 },
+        { name: "瑜伽", usageCount: 2 },
+        { name: "跑步", usageCount: 2 },
+        { name: "绘画", usageCount: 1 },
+        { name: "音乐", usageCount: 1 },
+        { name: "摄影", usageCount: 1 },
+        { name: "旅行", usageCount: 1 },
+        { name: "烹饪", usageCount: 1 },
+      ];
+    }
+
+    res.status(200).json(categories);
+  } catch (error) {
+    console.error("Error getting categories:", error);
     res.status(500).json({ message: "Server Error" });
   }
 };

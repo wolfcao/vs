@@ -84,11 +84,11 @@ const Layout: React.FC<LayoutProps> = ({
         </div>
       </aside>
 
-      {/* Top Header - Fixed outside the scrollable area */}
-      <div className="sticky top-0 z-40 bg-surface ghibli-border rounded-bl-3xl rounded-br-3xl shadow-[0px_4px_0px_0px_rgba(0,0,0,0.08)]">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 py-3 md:py-4">
-          {/* Search Bar - Only shown on marketplace page */}
-          {currentPath === "marketplace" && (
+      {/* Top Header - Only shown on Marketplace page */}
+      {currentPath === "marketplace" && (
+        <div className="sticky top-0 z-40 bg-surface ghibli-border rounded-bl-3xl rounded-br-3xl shadow-[0px_4px_0px_0px_rgba(0,0,0,0.08)]">
+          <div className="max-w-7xl mx-auto px-4 md:px-8 py-3 md:py-4">
+            {/* Search Bar - Only shown on marketplace page */}
             <div className="relative flex-grow mb-3 md:mb-0">
               <div className="absolute inset-y-0 left-0 pl-3 md:pl-4 flex items-center pointer-events-none">
                 <Search className="w-5 h-5 text-primary" />
@@ -109,17 +109,15 @@ const Layout: React.FC<LayoutProps> = ({
                 </button>
               )}
             </div>
-          )}
-          
-          {/* Action Buttons - Only shown when in marketplace on desktop */}
-          {currentPath === "marketplace" && (
+            
+            {/* Action Buttons - Only shown when in marketplace on desktop */}
             <div className="hidden md:flex items-center justify-center gap-2 md:gap-3">
               {/* Theme Switcher - Only shown on desktop */}
               <ThemeSwitcher />
             </div>
-          )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Main Content Area - Now scrollable without containing the sticky header */}
       <main className="flex-1 overflow-y-auto h-screen pb-20 md:pb-0">

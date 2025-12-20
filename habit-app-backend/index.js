@@ -7,6 +7,7 @@ const config = require("./config/config");
 require("./models/User");
 require("./models/SubTask");
 require("./models/HabitDefinition");
+require("./models/Category");
 require("./models/TeamMember");
 require("./models/TimeModificationRequest");
 require("./models/ActiveHabit");

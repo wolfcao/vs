@@ -41,6 +41,13 @@ const TeamMember = sequelize.define(
       },
       allowNull: false,
     },
+    approvalStatus: {
+      type: DataTypes.SMALLINT,
+      defaultValue: 0, // 0: 审批中, 1: 通过, -1: 拒绝
+      validate: {
+        isIn: [[-1, 0, 1]],
+      },
+    },
   },
   {
     tableName: "team_members",
