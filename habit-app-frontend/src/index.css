@@ -7,24 +7,24 @@
 /* 主题CSS变量定义 - 简约风格 */
 :root {
   /* 简约主色调 - 柔和蓝色 */
-  --color-primary: #607D8B;
-  --color-primaryHover: #546E7A;
-  --color-primaryDark: #455A64;
+  --color-primary: #607d8b;
+  --color-primaryHover: #546e7a;
+  --color-primaryDark: #455a64;
   /* 简约配色方案 - 中性色调 */
-  --color-secondary: #90A4AE;
-  --color-secondaryHover: #78909C;
-  --color-background: #FAFAFA;
-  --color-surface: #FFFFFF;
-  --color-surfaceHover: #F5F5F5;
-  --color-text: #37474F;
-  --color-textSecondary: #607D8B;
-  --color-textTertiary: #90A4AE;
-  --color-border: #ECEFF1;
-  --color-borderLight: #F5F5F5;
-  --color-success: #4CAF50;
-  --color-warning: #FFC107;
-  --color-error: #F44336;
-  --color-info: #2196F3;
+  --color-secondary: #90a4ae;
+  --color-secondaryHover: #78909c;
+  --color-background: #fafafa;
+  --color-surface: #ffffff;
+  --color-surfaceHover: #f5f5f5;
+  --color-text: #37474f;
+  --color-textSecondary: #607d8b;
+  --color-textTertiary: #90a4ae;
+  --color-border: #eceff1;
+  --color-borderLight: #f5f5f5;
+  --color-success: #4caf50;
+  --color-warning: #ffc107;
+  --color-error: #f44336;
+  --color-info: #2196f3;
   /* 阴影 - 简约柔和 */
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
   --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.06);
@@ -42,7 +42,7 @@
 
 /* 全局基础样式 */
 body {
-  font-family: 'Microsoft YaHei', 'PingFang SC', 'Heiti SC', sans-serif;
+  font-family: "Microsoft YaHei", "PingFang SC", "Heiti SC", sans-serif;
   background-color: var(--color-background);
   color: var(--color-text);
   line-height: 1.6;
@@ -105,7 +105,7 @@ body {
 }
 
 .ghibli-btn-success:hover {
-  background: #43A047;
+  background: #43a047;
   box-shadow: var(--shadow-md);
   color: white;
 }
@@ -116,7 +116,7 @@ body {
 }
 
 .ghibli-btn-warning:hover {
-  background: #FFB300;
+  background: #ffb300;
   box-shadow: var(--shadow-md);
 }
 
@@ -126,18 +126,20 @@ body {
 }
 
 .ghibli-btn-error:hover {
-  background: #E53935;
+  background: #e53935;
   box-shadow: var(--shadow-md);
   color: white;
 }
 
 .ghibli-btn-secondary {
   background: var(--color-secondary);
+  color: var(--color-text);
 }
 
 .ghibli-btn-secondary:hover {
   background: var(--color-secondaryHover);
   box-shadow: var(--shadow-md);
+  color: var(--color-text);
 }
 
 /* 简约风格边框样式 */
@@ -149,7 +151,7 @@ body {
 
 /* 简约风格标题样式 */
 .ghibli-title {
-  font-family: 'Microsoft YaHei', 'PingFang SC', 'Heiti SC', sans-serif;
+  font-family: "Microsoft YaHei", "PingFang SC", "Heiti SC", sans-serif;
   font-weight: 600;
   color: var(--color-text);
   letter-spacing: 0.2px;
@@ -382,23 +384,23 @@ body {
     margin: 0 8px;
     border-radius: var(--radius-md);
   }
-  
+
   .ghibli-btn {
     padding: 10px 16px;
     font-size: 0.9rem;
     width: 100%;
   }
-  
+
   .ghibli-form {
     gap: 14px;
     padding: 0 8px;
   }
-  
+
   .ghibli-nav-item {
     padding: 12px 14px;
     font-size: 0.9rem;
   }
-  
+
   .ghibli-card-header,
   .ghibli-card-content,
   .ghibli-card-footer {
@@ -409,43 +411,43 @@ body {
 /* 深色模式支持 - 简约风格 */
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-background: #1A1A1A;
-    --color-surface: #2D2D2D;
-    --color-surfaceHover: #3A3A3A;
-    --color-text: #FFFFFF;
-    --color-textSecondary: #B0B0B0;
-    --color-border: #4A4A4A;
-    --color-secondary: #78909C;
+    --color-background: #1a1a1a;
+    --color-surface: #2d2d2d;
+    --color-surfaceHover: #3a3a3a;
+    --color-text: #ffffff;
+    --color-textSecondary: #b0b0b0;
+    --color-border: #4a4a4a;
+    --color-secondary: #78909c;
   }
-  
+
   .ghibli-card {
     background: var(--color-surface);
     border-color: var(--color-border);
   }
-  
+
   .ghibli-input {
     background: var(--color-surface);
     color: var(--color-text);
     border-color: var(--color-border);
   }
-  
+
   .ghibli-divider {
     background: var(--color-border);
   }
-  
+
   .ghibli-table tr:hover td {
     background: var(--color-surfaceHover);
   }
-  
+
   .ghibli-nav {
     background: var(--color-surface);
     border-bottom-color: var(--color-border);
   }
-  
+
   .ghibli-nav-item:hover {
     background-color: var(--color-surfaceHover);
   }
-  
+
   .ghibli-nav-item.active {
     background-color: transparent;
   }
