@@ -106,6 +106,7 @@ CREATE TABLE `users` (
   `password` varchar(255) NOT NULL,
   `updated_at` datetime DEFAULT NULL,
   `username` varchar(255) NOT NULL,
+  `gender` enum('male','female','other') DEFAULT NULL,
   `is_active` tinyint(1) DEFAULT 1,
   `deleted_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),

@@ -42,9 +42,11 @@ const startServer = async () => {
     await sequelize.authenticate();
     console.log("MySQL connected...");
 
-    // Sync database models
-    await sequelize.sync({ alter: true });
-    console.log("Database synced...");
+    // Database sync configuration
+    // For all environments, use force: false to prevent data loss
+    // alter: false means no automatic schema changes
+    await sequelize.sync({ force: false, alter: false });
+    console.log(`Database connected (${config.nodeEnv} mode)...`);
 
     // Start server
     app.listen(PORT, () => {

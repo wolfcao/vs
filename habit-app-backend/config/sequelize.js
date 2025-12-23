@@ -12,10 +12,9 @@ const sequelize = new Sequelize(
     dialect: config.mysql.dialect,
     logging: config.nodeEnv === 'development' ? 
       (sql, timing) => {
-        // Filter out low-level hex value logs from MySQL driver
-        if (typeof sql === 'string' && !/\[0x[a-f0-9]+(\s+0x[a-f0-9]+)*\]/.test(sql)) {
-          console.log(`[SQL] ${sql} (${timing}ms)`);
-        }
+        // Skip all SQL logging for development to reduce noise
+        // In production, logging is disabled entirely
+        return;
       } : false,
     define: {
       timestamps: true, // Enable timestamps by default

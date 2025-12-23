@@ -54,19 +54,20 @@ exports.getCurrentUser = async (req, res) => {
 // Update current user
 exports.updateUser = async (req, res) => {
   try {
-    const { name, avatar } = req.body;
+    const { name, avatar, email } = req.body;
     let updatedUser;
 
     // Validate input
-    if (!name && !avatar) {
+    if (!name && !avatar && !email) {
       return res.status(400).json({
-        message: "At least one field (name or avatar) is required for update",
+        message: "At least one field (name, avatar, or email) is required for update",
       });
     }
 
     const updateData = {};
     if (name) updateData.name = name;
     if (avatar) updateData.avatar = avatar;
+    if (email) updateData.email = email;
 
     if (isDatabaseConnected()) {
       // Use MySQL if connected
@@ -106,25 +107,32 @@ exports.register = async (req, res) => {
     const { name, username, email, password, avatar } = req.body;
 
     // Validate input
-    if (!name || !username || !email || !password) {
+    if (!name || !username || !password) {
       return res
         .status(400)
-        .json({ message: "Name, username, email, and password are required" });
+        .json({ message: "Name, username, and password are required" });
     }
 
     // Check if user already exists
     if (isDatabaseConnected()) {
+      // Build the where clause dynamically
+      const whereClause = {
+        [sequelize.Sequelize.Op.or]: [{ username }]
+      };
+      // Only add email to the where clause if it's provided
+      if (email) {
+        whereClause[sequelize.Sequelize.Op.or].push({ email });
+      }
+      
       const existingUser = await User.findOne({
-        where: {
-          [sequelize.Sequelize.Op.or]: [{ username }, { email }],
-        },
+        where: whereClause,
       });
       if (existingUser) {
         if (existingUser.username === username) {
           return res
             .status(400)
             .json({ message: "User already exists with this username" });
-        } else {
+        } else if (email && existingUser.email === email) {
           return res
             .status(400)
             .json({ message: "User already exists with this email" });
@@ -137,11 +145,14 @@ exports.register = async (req, res) => {
           .status(400)
           .json({ message: "User already exists with this username" });
       }
-      const existingUserByEmail = await userStorage.findOne({ email });
-      if (existingUserByEmail) {
-        return res
-          .status(400)
-          .json({ message: "User already exists with this email" });
+      // Only check email if it's provided
+      if (email) {
+        const existingUserByEmail = await userStorage.findOne({ email });
+        if (existingUserByEmail) {
+          return res
+            .status(400)
+            .json({ message: "User already exists with this email" });
+        }
       }
     }
 
