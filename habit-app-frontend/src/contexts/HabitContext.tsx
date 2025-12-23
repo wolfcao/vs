@@ -21,7 +21,9 @@ import {
 
 interface UpdateUserParams {
   name: string;
+  email: string;
   avatar: string;
+  gender?: 'male' | 'female' | 'other';
   file?: File | null;
 }
 
@@ -312,11 +314,13 @@ export const HabitProvider: React.FC<{ children: ReactNode }> = ({
       setUser((prevUser) => ({
         ...prevUser,
         name: params.name,
+        email: params.email,
         avatar: avatarUrl,
+        gender: params.gender,
       }));
 
       // 更新用户信息到后端
-      await updateCurrentUser({ name: params.name, avatar: avatarUrl });
+      await updateCurrentUser({ name: params.name, email: params.email, avatar: avatarUrl, gender: params.gender });
       // User info updated successfully
     } catch (error) {
       // Error handled by state management

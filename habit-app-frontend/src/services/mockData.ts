@@ -6,6 +6,7 @@ export const CURRENT_USER: User = {
   username: "alexchen",
   email: "alex@example.com",
   avatar: "https://picsum.photos/seed/alex/100/100",
+  gender: "male",
   is_active: true,
   deleted_at: null,
 };

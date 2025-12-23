@@ -55,7 +55,7 @@ export const register = (credentials: RegisterCredentials) =>
 // 用户相关API
 export const getCurrentUser = () => request<User>('/users/current');
 
-export const updateCurrentUser = (userData: { name: string; avatar: string }) =>
+export const updateCurrentUser = (userData: { name?: string; avatar?: string; email?: string; gender?: 'male' | 'female' | 'other' }) =>
   request<User>('/users/current', {
     method: 'PUT',
     body: JSON.stringify(userData),

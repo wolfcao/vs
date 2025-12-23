@@ -63,6 +63,7 @@ export interface User {
   username: string;
   email: string;
   avatar: string;
+  gender?: 'male' | 'female' | 'other';
   is_active: boolean;
   deleted_at: Date | null;
 }
@@ -75,8 +76,8 @@ export interface LoginCredentials {
 export interface RegisterCredentials {
   name: string;
   username: string;
-  email: string;
   password: string;
+  email?: string;
   avatar?: string;
 }
 
